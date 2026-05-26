@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>昔時賢文挑戰賽：寧可直中取</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: #f0f4f8;
+            font-family: 'Microsoft JhengHei', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        #game-container {
+            position: relative;
+            width: 400px;
+            height: 500px;
+            background: linear-gradient(to bottom, #e0f2fe, #7dd3fc);
+            border: 4px solid #0284c7;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+        }
+
+        #score-board {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #0369a1;
+            z-index: 10;
+        }
+
+        #player {
+            position: absolute;
+            bottom: 20px;
+            left: 180px;
+            width: 50px;
+            height: 50px;
+            background-color: #f59e0b;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            transition: left 0.1s ease-out;
+        }
+
+        .falling-item {
+            position: absolute;
+            font-size: 28px;
+            font-weight: bold;
+            user-select: none;
+        }
+
+        .good { color: #16a34a; text-shadow: 1px 1px 2px #fff; }
+        .bad { color: #dc2626; text-shadow: 1px 1px 2px #fff; }
+
+        /* 結算與教學畫面 */
+        .overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+            z-index: 20;
+        }
+
+        button {
+            background-color: #0284c7;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 18px;
+            border-radius: 50px;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: transform 0.2s;
+        }
+
+        button:hover { transform: scale(1.05); }
+        
+        .hidden { display: none !important; }
+
+        .word-box {
+            display: inline-block;
+            border: 2px dashed #0284c7;
+            width: 40px;
+            height: 40px;
+            margin: 5px;
+            line-height: 40px;
+            font-size: 24px;
+            background: #fff;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>昔時賢文：品格考驗賽</h1>
+    <div id="game-container">
+        <div id="score-board">分數: <span id="score">0</span> / 100</div>
+        <div id="player">🤠</div>
+
+        <!-- 開始畫面 -->
+        <div id="start-screen" class="overlay">
+            <h2>寧可直中取，不向曲中求</h2>
+            <p style="color:#475569; padding: 0 20px;">
+                <b>遊戲規則：</b><br>
+                左右移動小俠客，接住代表正直的<b>綠色字與直線(｜)</b>。<br>
+                躲避代表歪邪的<b>紅色字與曲線(～)</b>！
+            </p>
+            <p style="font-size: 14px; color: #64748b;">(電腦用左右方向鍵 ⬅️ ➡️，手機直接點擊左右螢幕)</p>
+            <button onclick="startGame()">開始挑戰</button>
+        </div>
+
+        <!-- 第二關：拼字畫面 -->
+        <div id="puzzle-screen" class="overlay hidden">
+            <h3>💡 終極智慧考驗</h3>
+            <p>請將剛剛學到的經典名言依序排列：</p>
+            <div style="margin-bottom: 20px;">
+                <div id="ans-1" class="word-box"></div>
+                <div id="ans-2" class="word-box"></div>
+                <div id="ans-3" class="word-box"></div>
+                <div id="ans-4" class="word-box"></div>
+                <div id="ans-5" class="word-box"></div>
+                <p>，</p>
+                <div id="ans-6" class="word-box"></div>
+                <div id="ans-7" class="word-box"></div>
+                <div id="ans-8" class="word-box"></div>
+                <div id="ans-9" class="word-box"></div>
+                <div id="ans-10" class="word-box"></div>
+            </div>
+            <div id="word-buttons">
+                <!-- 按鈕會由 JS 動態生成 -->
+            </div>
+            <p id="puzzle-hint" style="color: red; min-height: 20px;"></p>
+        </div>
+
+        <!-- 結束畫面 -->
+        <div id="win-screen" class="overlay hidden">
+            <h2>🎉 恭喜通關！🎉</h2>
+            <p style="font-size: 18px; font-weight: bold; color: #15803d;">「寧可直中取，不向曲中求」</p>
+            <p style="color:#475569; font-size: 14px; padding: 0 10px;">
+                <b>意涵解析：</b><br>
+                寧願正正當當、光明正大地去爭取應得的東西；也絕不委曲求全、用不正當的手段去謀取利益。這是在稱讚正直高尚的人格喔！
+            </p>
+            <button onclick="resetGame()">再玩一次</button>
+        </div>
+    </div>
+
+<script>
+    const container = document.getElementById('game-container');
+    const player = document.getElementById('player');
+    const scoreElement = document.getElementById('score');
+    
+    let score = 0;
+    let gameActive = false;
+    let playerX = 180;
+    let gameInterval;
+    let spawnInterval;
+    let fallingItems = [];
+
+    // 遊戲物件資料
+    const goodItems = ['直', '中', '取', '｜', '正', '誠'];
+    const badItems = ['曲', '求', '～', '歪', '邪', '騙'];
+
+    // 監聽鍵盤與點擊事件
+    document.addEventListener('keydown', (e) => {
+        if (!gameActive) return;
+        if (e.key === 'ArrowLeft' && playerX > 10) playerX -= 25;
+        if (e.key === 'ArrowRight' && playerX < 340) playerX += 25;
+        player.style.left = playerX + 'px';
+    });
+
+    container.addEventListener('touchstart', (e) => {
+        if (!gameActive) return;
+        const touchX = e.touches[0].clientX - container.getBoundingClientRect().left;
+        if (touchX < 200 && playerX > 10) playerX -= 30;
+        if (touchX >= 200 && playerX < 340) playerX += 30;
+        player.style.left = playerX + 'px';
+    });
+
+    container.addEventListener('click', (e) => {
+        if (!gameActive) return;
+        const clickX = e.clientX - container.getBoundingClientRect().left;
+        if (clickX < 200 && playerX > 10) playerX -= 30;
+        if (clickX >= 200 && playerX < 340) playerX += 30;
+        player.style.left = playerX + 'px';
+    });
+
+    function startGame() {
+        document.getElementById('start-screen').classList.add('hidden');
+        score = 0;
+        scoreElement.innerText = score;
+        gameActive = true;
+        fallingItems.forEach(item => item.el.remove());
+        fallingItems = [];
+        
+        // 遊戲主要迴圈
+        gameInterval = setInterval(updateGame, 20);
+        // 每 0.8 秒掉落一個物品
+        spawnInterval = setInterval(spawnItem, 800);
+    }
+
+    function spawnItem() {
+        if (!gameActive) return;
+        const isGood = Math.random() > 0.4; // 60% 機率出好東西
+        const text = isGood ? goodItems[Math.floor(Math.random() * goodItems.length)] : badItems[Math.floor(Math.random() * badItems.length)];
+        
+        const el = document.createElement('div');
+        el.className = `falling-item ${isGood ? 'good' : 'bad'}`;
+        el.innerText = text;
+        el.style.left = Math.floor(Math.random() * 360) + 'px';
+        el.style.top = '0px';
+        container.appendChild(el);
+
+        fallingItems.push({
+            el: el,
+            y: 0,
+            isGood: isGood,
+            speed: Math.random() * 2 + 3
+        });
+    }
+
+    function updateGame() {
+        for (let i = fallingItems.length - 1; i >= 0; i--) {
+            let item = fallingItems[i];
+            item.y += item.speed;
+            item.el.style.top = item.y + 'px';
+
+            // 碰撞檢測 (小俠客位置在 bottom: 20px, height: 50px -> 也就是 y 在 430 到 480 之間)
+            if (item.y > 420 && item.y < 470) {
+                let itemX = parseInt(item.el.style.left);
+                if (itemX + 20 >= playerX && itemX <= playerX + 50) {
+                    // 撞到了！
+                    if (item.isGood) {
+                        score += 10;
+                        player.innerText = '🤩';
+                    } else {
+                        score = Math.max(0, score - 15);
+                        player.innerText = '😭';
+                    }
+                    scoreElement.innerText = score;
+                    setTimeout(() => { player.innerText = '🤠'; }, 300);
+                    item.el.remove();
+                    fallingItems.splice(i, 1);
+                    
+                    // 達到 100 分進入第二關
+                    if (score >= 100) {
+                        endFirstStage();
+                    }
+                    continue;
+                }
+            }
+
+            // 超過邊界移除
+            if (item.y > 500) {
+                item.el.remove();
+                fallingItems.splice(i, 1);
+            }
+        }
+    }
+
+    function endFirstStage() {
+        gameActive = false;
+        clearInterval(gameInterval);
+        clearInterval(spawnInterval);
+        document.getElementById('puzzle-screen').classList.remove('hidden');
+        initPuzzle();
+    }
+
+    // 第二關：拼字遊戲
+    const correctSentence = ["寧", "可", "直", "中", "取", "不", "向", "曲", "中", "求"];
+    let currentInput = [];
+
+    function initPuzzle() {
+        currentInput = [];
+        document.getElementById('puzzle-hint').innerText = "";
+        for(let i=1; i<=10; i++) {
+            document.getElementById(`ans-${i}`).innerText = "";
+        }
+
+        // 打亂順序的按鈕
+        const shuffled = [...correctSentence].sort(() => Math.random() - 0.5);
+        const btnContainer = document.getElementById('word-buttons');
+        btnContainer.innerHTML = "";
+
+        shuffled.forEach(word => {
+            const btn = document.createElement('button');
+            btn.innerText = word;
+            btn.style.margin = "5px";
+            btn.style.backgroundColor = "#0284c7";
+            btn.onclick = () => selectWord(word, btn);
+            btnContainer.appendChild(btn);
+        });
+    }
+
+    function selectWord(word, btn) {
+        if (currentInput.length >= 10) return;
+        
+        currentInput.push(word);
+        document.getElementById(`ans-${currentInput.length}`).innerText = word;
+        btn.style.visibility = "hidden"; // 點過就隱藏
+
+        if (currentInput.length === 10) {
+            checkPuzzleResult();
+        }
+    }
+
+    function checkPuzzleResult() {
+        let isCorrect = true;
+        for (let i = 0; i < 10; i++) {
+            if (currentInput[i] !== correctSentence[i]) {
+                isCorrect = false;
+                break;
+            }
+        }
+
+        if (isCorrect) {
+            document.getElementById('puzzle-screen').classList.add('hidden');
+            document.getElementById('win-screen').classList.remove('hidden');
+        } else {
+            document.getElementById('puzzle-hint').innerText = "順序不對喔！再試一次吧！";
+            setTimeout(() => {
+                initPuzzle(); // 失敗就重來
+            }, 1500);
+        }
+    }
+
+    function resetGame() {
+        document.getElementById('win-screen').classList.add('hidden');
+        document.getElementById('start-screen').classList.remove('hidden');
+    }
+</script>
+</body>
+</html>
